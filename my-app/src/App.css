@@ -1,0 +1,379 @@
+/* Import Google Fonts for a modern look */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+/* CSS Variables for consistent theming */
+:root {
+  --primary-color: #2ecc71;
+  --danger-color: #e74c3c;
+  --warning-color: #f1c40f;
+  --text-color: #34495e;
+  --background-color: #ffffff;
+  --secondary-background: #ecf0f1;
+  --shadow-color: rgba(0, 0, 0, 0.15);
+  --frostbite-low: #2ecc71;
+  --frostbite-medium: #f1c40f;
+  --frostbite-high: #e74c3c;
+}
+
+/* Reset and base styles */
+body {
+  background-color: var(--secondary-background);
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+  color: var(--text-color);
+}
+
+/* Main Container */
+.main-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0; /* Remove padding to let swipe-container handle it */
+  background: var(--background-color);
+  border-radius: 15px;
+  box-shadow: 0 6px 12px var(--shadow-color);
+  overflow: hidden; /* Prevent content overflow */
+}
+
+/* Swipe Container */
+.swipe-container {
+  display: flex;
+  width: 200%; /* Two pages side by side */
+  height: 100%;
+  transition: transform 0.3s ease-in-out;
+}
+
+.page {
+  width: 50%; /* Each page takes half the container width */
+  padding: 25px;
+  box-sizing: border-box;
+}
+
+/* Hero Section */
+.hero-section {
+  text-align: center;
+  padding: 30px;
+  background: linear-gradient(135deg, #ecf0f1, #2980b9);
+  color: #34495e;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.title {
+  font-size: 40px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 1px;
+}
+
+.description {
+  font-size: 18px;
+  margin-top: 10px;
+  opacity: 0.9;
+}
+
+/* Buttons */
+.connect-button,
+.disconnect-button {
+  display: block;
+  width: 200px;
+  margin: 20px auto;
+  padding: 14px 0;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.connect-button {
+  background-color: var(--primary-color);
+}
+
+.disconnect-button {
+  background-color: var(--danger-color);
+}
+
+.connect-button:hover,
+.disconnect-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px var(--shadow-color);
+}
+
+.connect-button:active,
+.disconnect-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+/* Frostbite Risk Section */
+.frostbite-container {
+  padding: 25px;
+  background: var(--secondary-background);
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.frostbite-text {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: var(--text-color);
+}
+
+.frostbite-value {
+  font-size: 36px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: color 0.3s ease;
+}
+
+.risk-low {
+  color: var(--frostbite-low);
+}
+
+.risk-medium {
+  color: var(--frostbite-medium);
+}
+
+.risk-high {
+  color: var(--frostbite-high);
+}
+
+.risk-unknown {
+  color: #7f8c8d;
+}
+
+/* Arms Section */
+.arms-container {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px;
+  background: var(--secondary-background);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.arm-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.arm-section:hover {
+  transform: translateY(-5px);
+}
+
+.hand-image {
+  width: 160px;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px var(--shadow-color);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hand-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px var(--shadow-color);
+}
+
+.temp-label {
+  font-size: 18px;
+  color: #7f8c8d;
+  margin-top: 15px;
+}
+
+.temp-value {
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-top: 5px;
+}
+
+/* Information Container */
+.info-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding: 25px;
+  background: var(--secondary-background);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.info-item {
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-color);
+}
+
+.info-item i {
+  color: var(--primary-color);
+  font-size: 18px;
+}
+
+/* Graph Container */
+.graph-container {
+  padding: 20px;
+  background: var(--secondary-background);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px var(--shadow-color);
+  margin-top: 20px;
+}
+
+/* Swipe Hint */
+.swipe-hint {
+  text-align: center;
+  font-size: 14px;
+  color: #7f8c8d;
+  margin-top: 20px;
+}
+
+/* Error Message */
+.error {
+  background-color: #fceaea;
+  color: var(--danger-color);
+  font-weight: 600;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 4px var(--shadow-color);
+  margin: 20px 0;
+}
+
+/* Swipe container styles */
+/* Override page width for single-page rendering */
+.page {
+  width: 100% !important; /* Force full width for each page */
+  padding: 20px;
+  min-height: 100vh;
+}
+
+/* Optionally, if you're not using the swipe container anymore, you can remove or override its styles */
+.swipe-container {
+  display: block !important;
+  width: 100% !important;
+  transition: none !important;
+}
+
+
+/* Swipe button styles */
+.swipe-button {
+  padding: 12px 24px;
+  background-color: #2980b9;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin: 20px auto;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swipe-button:hover {
+  background-color: #3498db;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.swipe-button:active {
+  transform: translateY(0);
+}
+
+.swipe-button::after {
+  content: '→';
+  font-size: 1.2rem;
+}
+
+.swipe-button[onClick*="setCurrentPage(0)"]::after {
+  content: '←';
+  margin-right: 8px;
+  order: -1;
+}
+
+/* Existing styles - keep these as they were */
+.main-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  overflow: hidden;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .main-container {
+    margin: 20px;
+  }
+
+  .arms-container {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .info-container {
+    grid-template-columns: 1fr;
+  }
+
+  .hand-image {
+    width: 140px;
+    height: 190px;
+  }
+
+  .title {
+    font-size: 32px;
+  }
+
+  .description {
+    font-size: 16px;
+  }
+
+  .connect-button,
+  .disconnect-button {
+    width: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 28px;
+  }
+
+  .frostbite-value {
+    font-size: 28px;
+  }
+
+  .hand-image {
+    width: 120px;
+    height: 160px;
+  }
+
+  .page {
+    padding: 15px;
+  }
+}
