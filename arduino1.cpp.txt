@@ -1,0 +1,210 @@
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLE2902.h>
+#include <Arduino.h>
+#include <math.h> // For GPS distance calculation
+
+#define SERVICE_UUID "19b10000-e8f2-537e-4f6c-d104768a1214"
+#define DATA_CHAR_UUID "19b10000-e8f2-537e-4f6c-d104768a1214"
+
+BLEServer* pServer = NULL;
+BLECharacteristic* pDataChar = NULL;
+bool deviceConnected = false;
+
+// Variables to store previous GPS coordinates
+static float prevLat = 0.0;
+static float prevLon = 0.0;
+static bool firstGpsReading = true;
+
+// Base64 encoding implementation
+namespace base64 {
+  static const char* b64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  String encode(const char* input) {
+    String output = "";
+    int i = 0, j = 0;
+    unsigned char char_array_3[3], char_array_4[4];
+    int in_len = strlen(input);
+
+    while (in_len--) {
+      char_array_3[i++] = *(input++);
+      if (i == 3) {
+        char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+        char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+        char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+        char_array_4[3] = char_array_3[2] & 0x3f;
+
+        for (i = 0; i < 4; i++) {
+          output += b64_table[char_array_4[i]];
+        }
+        i = 0;
+      }
+    }
+
+    if (i) {
+      for (j = i; j < 3; j++) {
+        char_array_3[j] = '\0';
+      }
+
+      char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+      char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+      char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+
+      for (j = 0; j < i + 1; j++) {
+        output += b64_table[char_array_4[j]];
+      }
+
+      while (i++ < 3) {
+        output += '=';
+      }
+    }
+
+    return output;
+  }
+}
+
+// Generate fake temperature data
+float getFakeTemperature(float time) {
+  return 10.0 * sin(time / 10.0); // -10°C to 10°C
+}
+
+// Calculate distance between two GPS coordinates (in meters)
+float calculateGpsDistance(float lat1, float lon1, float lat2, float lon2) {
+  const float R = 6371000; // Earth radius in meters
+  float dLat = (lat2 - lat1) * M_PI / 180.0;
+  float dLon = (lon2 - lon1) * M_PI / 180.0;
+  float a = sin(dLat / 2) * sin(dLat / 2) +
+            cos(lat1 * M_PI / 180.0) * cos(lat2 * M_PI / 180.0) *
+            sin(dLon / 2) * sin(dLon / 2);
+  float c = 2 * atan2(sqrt(a), sqrt(1 - a));
+  return R * c;
+}
+
+// Generate fake sensor data
+void getFakeSensorData(float time, float* data) {
+  // Magnetometer (μT)
+  data[0] = 50.0 * sin(time / 5.0); // magX
+  data[1] = 30.0 * cos(time / 5.0); // magY
+  data[2] = 20.0 * sin(time / 3.0); // magZ
+
+  // Gyroscope (°/s)
+  data[3] = 2.0 * sin(time / 2.0); // gyroX
+  data[4] = 1.5 * cos(time / 2.0); // gyroY
+  data[5] = 1.0 * sin(time / 1.5); // gyroZ
+
+  // Accelerometer (m/s²)
+  data[6] = 9.8 * sin(time / 4.0); // accelX
+  data[7] = 9.8 * cos(time / 4.0); // accelY
+  data[8] = 9.8 + 2.0 * sin(time / 3.0); // accelZ
+
+  // GPS
+  data[9] = 45.0 + 0.001 * time; // lat
+  data[10] = -93.0 + 0.001 * time; // lon
+  data[11] = 300.0 + 10.0 * sin(time / 10.0); // alt
+
+  // Satellites
+  data[12] = 8 + (int)(2 * sin(time / 20.0)); // sat
+
+  // Temperature
+  data[13] = getFakeTemperature(time); // temp
+
+  // RSSI
+  data[14] = -50.0 + 10.0 * sin(time / 15.0); // rssi
+
+  // Oxygen level (%)
+  data[15] = 90.0 + 10.0 * sin(time / 12.0); // oxygen (80% to 100%)
+
+  // Heart rate (BPM)
+  data[16] = 80.0 + 40.0 * sin(time / 8.0); // bpm (40 to 120)
+}
+
+class MyServerCallbacks : public BLEServerCallbacks {
+  void onConnect(BLEServer* pServer) {
+    deviceConnected = true;
+  }
+  void onDisconnect(BLEServer* pServer) {
+    deviceConnected = false;
+    BLEDevice::startAdvertising();
+  }
+};
+
+void setup() {
+  Serial.begin(115200);
+  delay(2000);
+
+  BLEDevice::init("ESP32_BLE_Fake_Data");
+  BLEDevice::setMTU(185); // Increased to accommodate full packet
+  pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
+
+  BLEService* pService = pServer->createService(SERVICE_UUID);
+  pDataChar = pService->createCharacteristic(
+    DATA_CHAR_UUID,
+    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY
+  );
+  pDataChar->addDescriptor(new BLE2902());
+  pService->start();
+
+  BLEAdvertising* pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(SERVICE_UUID);
+  pAdvertising->setScanResponse(true);
+  pAdvertising->start();
+}
+
+void loop() {
+  static float time = 0.0;
+
+  // Generate fake sensor data
+  float data[17];
+  getFakeSensorData(time, data);
+
+  // Determine victor_sutac value
+  int victor_sutac = 0;
+  if (data[13] > -10.00) {
+    victor_sutac = 1;
+  } else if (data[15] == 850.0) {
+    victor_sutac = 2;
+  } else if (data[16] == 500.0 || data[16] == 1600.0) {
+    victor_sutac = 3;
+  } else if (abs(data[8]) == 100.01) {
+    victor_sutac = 4;
+  } else if (!firstGpsReading) {
+    float distance = calculateGpsDistance(prevLat, prevLon, data[9], data[10]);
+    if (distance == 15000.0) {
+      victor_sutac = 5;
+    }
+  }
+
+  // Update previous GPS coordinates
+  prevLat = data[9];
+  prevLon = data[10];
+  firstGpsReading = false;
+
+  // Format data as comma-separated string
+  char dataStr[128];
+  snprintf(dataStr, sizeof(dataStr),
+           "%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%.6f,%.6f,%.1f,%d,%.1f,%.1f,%.1f,%.1f,%d\n",
+           data[0], data[1], data[2], // magX, magY, magZ
+           data[3], data[4], data[5], // gyroX, gyroY, gyroZ
+           data[6], data[7], data[8], // accelX, accelY, accelZ
+           data[9], data[10], data[11], // lat, lon, alt
+           (int)data[12], // sat
+           data[13], // temp
+           data[14], // rssi
+           data[15], // oxygen
+           data[16], // bpm
+           victor_sutac // victor_sutac
+  );
+
+  // Send to Serial (raw data)
+  Serial.print(dataStr);
+
+  // Send to BLE (base64-encoded) if connected
+  if (deviceConnected) {
+    String dataStrEncoded = base64::encode(dataStr);
+    pDataChar->setValue(dataStrEncoded.c_str());
+    pDataChar->notify();
+  }
+
+  time += 2.0;
+  delay(2000);
+}
